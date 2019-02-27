@@ -94,7 +94,7 @@ namespace WebhooksReceiver.Controllers
             vm.url = body["resource"]["url"].ToString();
             vm.organization = split[0].ToString();
             vm.teamProject = body["resource"]["fields"]["System.AreaPath"].ToString();
-            vm.createdBy = body["resource"]["fields"]["System.ChangedBy"]["uniqueName"].ToString();
+            vm.createdBy = body["resource"]["fields"]["System.CreatedBy"]["displayName"].ToString();
 
             return vm;
         }
