@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WebhooksReceiver.Models;
+using WebhooksReceiver.ViewModels;
 
 namespace WebhooksReceiver.Repos
 {
@@ -21,10 +22,10 @@ namespace WebhooksReceiver.Repos
             _appSettings = appSettings;
         }
 
-        public WorkItem UpdateWorkItem(JsonPatchDocument patchDocument, int id)
+        public WorkItem UpdateWorkItem(JsonPatchDocument patchDocument, PayloadViewModel vm)
         {
             string pat = _appSettings.Value.AzureDevOpsToken;           
-            Uri baseUri = new Uri(_appSettings.Value.AzureDevOpsOrgUrl);
+            Uri baseUri = new Uri("https://dev.azure.com/" + vm.organization);
 
             VssCredentials clientCredentials = new VssCredentials(new VssBasicCredential("username", pat));
             VssConnection connection = new VssConnection(baseUri, clientCredentials);
@@ -34,7 +35,7 @@ namespace WebhooksReceiver.Repos
 
             try
             {
-                result = client.UpdateWorkItemAsync(patchDocument, id).Result;
+                result = client.UpdateWorkItemAsync(patchDocument, vm.id).Result;
             }
             catch (Exception ex)
             {
@@ -53,6 +54,6 @@ namespace WebhooksReceiver.Repos
 
     public interface IWorkItemRepo
     {
-        WorkItem UpdateWorkItem(JsonPatchDocument patchDocument, int id);
+        WorkItem UpdateWorkItem(JsonPatchDocument patchDocument, PayloadViewModel vm);
     }
 }

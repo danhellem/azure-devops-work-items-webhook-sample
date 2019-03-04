@@ -13,5 +13,6 @@ namespace WebhooksReceiver.ViewModels
         public int rev { get; set; }
         public string teamProject { get; set; }
         public string url { get; set; }
+        public string assignedTo { get; set; }
     }
 }
