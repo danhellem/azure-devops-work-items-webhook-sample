@@ -15,7 +15,7 @@ Simple example of a Webhook receiver from Azure Boards work item create event
 - Create a webhook for work item create event and send request to your REST API endpoint. [See documentation](https://docs.microsoft.com/en-us/azure/devops/service-hooks/services/webhooks?view=azure-devops)
 - Add "work-item-tags" header in the webhook definition. This is used to add a tag(s) to your newly created work item item.
 
-  ![work-item-tags-header](./misc/work-item-tags-header.png "header")
+  ![header](https://github.com/danhellem/azure-devops-work-items-webhook-sample/blob/master/Misc/work-item-tags-header.png "header")
 
 - The REST endpoint will accept the content and will turn around to update the given work item with an assigned to value and tag
 
