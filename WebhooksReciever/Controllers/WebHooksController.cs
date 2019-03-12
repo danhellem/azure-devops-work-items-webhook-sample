@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.Services.WebApi.Patch;
 using WebhooksReceiver.ViewModels;
 using WebhooksReceiver.Repos;
 using Microsoft.TeamFoundation.Common;
+using Microsoft.Extensions.Primitives;
 
 namespace WebhooksReceiver.Controllers
 {
@@ -32,6 +33,8 @@ namespace WebhooksReceiver.Controllers
         {
             PayloadViewModel vm = BuildPayloadViewModel(payload);
 
+            string tags = Request.Headers.ContainsKey("Work-Item-Tags") ? Request.Headers["Work-Item-Tags"] : new StringValues("");
+            
             if (vm.eventType != "workitem.created")
             {
                 return new OkResult();
@@ -65,14 +68,17 @@ namespace WebhooksReceiver.Controllers
                 );
             }
 
-            patchDocument.Add(
-                new JsonPatchOperation()
-                {
-                   Operation = Operation.Add,
-                   Path = "/fields/System.Tags",
-                   Value = "Work"
-                }
-            );
+            if (! string.IsNullOrEmpty(tags))
+            { 
+                patchDocument.Add(
+                    new JsonPatchOperation()
+                    {
+                       Operation = Operation.Add,
+                       Path = "/fields/System.Tags",
+                       Value = tags
+                    }
+                );
+            }
 
             patchDocument.Add(
                 new JsonPatchOperation()
