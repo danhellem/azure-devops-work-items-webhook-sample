@@ -24,7 +24,7 @@ namespace WebhooksReceiver.Repos
 
         public WorkItem UpdateWorkItem(JsonPatchDocument patchDocument, PayloadViewModel vm)
         {
-            string pat = _appSettings.Value.AzureDevOpsToken;           
+            string pat = vm.pat;          
             Uri baseUri = new Uri("https://dev.azure.com/" + vm.organization);
 
             VssCredentials clientCredentials = new VssCredentials(new VssBasicCredential("username", pat));
