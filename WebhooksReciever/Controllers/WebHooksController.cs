@@ -12,6 +12,10 @@ using WebhooksReceiver.ViewModels;
 using WebhooksReceiver.Repos;
 using Microsoft.TeamFoundation.Common;
 using Microsoft.Extensions.Primitives;
+using WebhooksReceiver.Models;
+using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Http;
+using System.Text;
 
 namespace WebhooksReceiver.Controllers
 {
@@ -19,22 +23,41 @@ namespace WebhooksReceiver.Controllers
     [ApiController]
     public class WebHooks : ControllerBase
     {
-        IWorkItemRepo _workItemRepo ; 
+        IWorkItemRepo _workItemRepo ;
+        IOptions<AppSettings> _appSettings;
 
-        public WebHooks(IWorkItemRepo workItemRepo)
+        public WebHooks(IWorkItemRepo workItemRepo, IOptions<AppSettings> appSettings)
         {
             _workItemRepo = workItemRepo;
+            _appSettings = appSettings;
         }
 
         // POST api/values
         [HttpPost]
         [Route("workitem/new")]
         public IActionResult Post([FromBody] JObject payload)
-        {
-            PayloadViewModel vm = BuildPayloadViewModel(payload);
-
+        {          
             string tags = Request.Headers.ContainsKey("Work-Item-Tags") ? Request.Headers["Work-Item-Tags"] : new StringValues("");
-            
+            string authHeader = Request.Headers.ContainsKey("Authorization") ? Request.Headers["Authorization"] : new StringValues("");
+
+            if (! authHeader.StartsWith("Basic"))
+            {
+                return new StandardResponseObjectResult("missing basic authorization header", StatusCodes.Status401Unauthorized);
+            }
+
+            //get pat from basic authorization header. This was set in the web hook
+            string pat = this.GetPersonalAccessToken(authHeader);           
+
+            PayloadViewModel vm = this.BuildPayloadViewModel(payload);
+
+            //make sure pat is not empty, if it is, pull from appsettings
+            vm.pat = (! string.IsNullOrEmpty(pat)) ? pat : _appSettings.Value.AzureDevOpsToken;
+
+            if (string.IsNullOrEmpty(vm.pat))
+            {
+                return new StandardResponseObjectResult("missing pat from authorization header and appsettings", StatusCodes.Status404NotFound);
+            }
+
             if (vm.eventType != "workitem.created")
             {
                 return new OkResult();
@@ -89,6 +112,15 @@ namespace WebhooksReceiver.Controllers
                 }
             );
 
+            patchDocument.Add(
+               new JsonPatchOperation()
+               {
+                   Operation = Operation.Add,
+                   Path = "/fields/System.IterationPath",
+                   Value = vm.teamProject
+               }
+            );
+
             var result = _workItemRepo.UpdateWorkItem(patchDocument, vm);           
 
             return (result != null) ? new OkResult() : new StatusCodeResult(500);             
@@ -133,6 +165,30 @@ namespace WebhooksReceiver.Controllers
             }
 
             return string.Empty;
+        }
+
+
+        /// <summary>
+        /// get personal access token where the token is the password in the basic authorization header
+        /// </summary>
+        /// <param name="basicAuthHeader"></param>
+        /// <returns>personal access token</returns>
+        private string GetPersonalAccessToken(string basicAuthHeader)
+        {
+            basicAuthHeader = basicAuthHeader.Replace("Basic ", "");
+            string pat = string.Empty;
+
+            Encoding encoding = Encoding.GetEncoding("iso-8859-1");
+            string userNameAndPat = encoding.GetString(Convert.FromBase64String(basicAuthHeader));
+            
+            //pull pat from authorization header
+            if (!string.IsNullOrEmpty(basicAuthHeader))
+            {
+                string[] split = userNameAndPat.Split(':');
+                pat = split.Count() == 2 ? split[1].ToString() : string.Empty;
+            }
+
+            return pat;
         }
     }
 }
