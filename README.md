@@ -17,24 +17,7 @@ Simple example of a Webhook receiver from Azure Boards work item create event
 
   ![header](https://github.com/danhellem/azure-devops-work-items-webhook-sample/blob/master/Misc/work-item-tags-header.png "header")
 
+- Create a Azure DevOps personal access token and enter into the basic authentication password. Username is ignored and can be any value.
+
 - The REST endpoint will accept the content and will turn around to update the given work item with an assigned to value and tag
 
-## Configuration
-
-The appsettings.json values need to be set with an Azure DevOps organization name and Personal Access Token (PAT)
-
-```
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Warning"
-    }
-  },
-  "AllowedHosts": "*",
-  "AppSettings": {
-    "AzureDevOpsOrgUrl": "https://dev.azure.com/<org name>",
-    "AzureDevOpsToken": "<personal access token>"
-  }
-
-}
-```
