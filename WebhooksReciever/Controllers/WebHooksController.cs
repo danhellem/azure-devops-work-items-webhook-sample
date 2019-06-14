@@ -25,6 +25,7 @@ namespace WebhooksReceiver.Controllers
     {
         IWorkItemRepo _workItemRepo ;
         IOptions<AppSettings> _appSettings;
+        bool isDebug = false;
 
         public WebHooks(IWorkItemRepo workItemRepo, IOptions<AppSettings> appSettings)
         {
@@ -36,17 +37,28 @@ namespace WebhooksReceiver.Controllers
         [HttpPost]
         [Route("workitem/new")]
         public IActionResult Post([FromBody] JObject payload)
-        {          
-            string tags = Request.Headers.ContainsKey("Work-Item-Tags") ? Request.Headers["Work-Item-Tags"] : new StringValues("");
-            string authHeader = Request.Headers.ContainsKey("Authorization") ? Request.Headers["Authorization"] : new StringValues("");
+        {
+            string tags = "";
+            string authHeader = "";
+            string pat = "";
 
-            if (! authHeader.StartsWith("Basic"))
-            {
-                return new StandardResponseObjectResult("missing basic authorization header", StatusCodes.Status401Unauthorized);
+#if DEBUG
+    isDebug = true;
+#endif
+
+            if (! isDebug)
+            { 
+                tags = Request.Headers.ContainsKey("Work-Item-Tags") ? Request.Headers["Work-Item-Tags"] : new StringValues("");
+                authHeader = Request.Headers.ContainsKey("Authorization") ? Request.Headers["Authorization"] : new StringValues("");
+
+                if (! authHeader.StartsWith("Basic"))
+                {
+                    return new StandardResponseObjectResult("missing basic authorization header", StatusCodes.Status401Unauthorized);
+                }
+
+                //get pat from basic authorization header. This was set in the web hook
+                pat = this.GetPersonalAccessToken(authHeader);           
             }
-
-            //get pat from basic authorization header. This was set in the web hook
-            string pat = this.GetPersonalAccessToken(authHeader);           
 
             PayloadViewModel vm = this.BuildPayloadViewModel(payload);
 
@@ -110,16 +122,7 @@ namespace WebhooksReceiver.Controllers
                     Path = "/fields/System.IterationPath",
                     Value = vm.teamProject
                 }
-            );
-
-            patchDocument.Add(
-               new JsonPatchOperation()
-               {
-                   Operation = Operation.Add,
-                   Path = "/fields/System.IterationPath",
-                   Value = vm.teamProject
-               }
-            );
+            );            
 
             var result = _workItemRepo.UpdateWorkItem(patchDocument, vm);           
 
