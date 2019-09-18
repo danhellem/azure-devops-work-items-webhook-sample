@@ -1,3 +1,5 @@
+> I am leaving Azure DevOps so this code will not be actively worked on. If you would like to take ownership of the repo please let us know.
+
 # azure-devops-work-items-webhook-sample
 
 Simple example of a Webhook receiver from Azure Boards work item create event
